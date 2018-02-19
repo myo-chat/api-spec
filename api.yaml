@@ -1,0 +1,668 @@
+openapi: '3.0.0'
+
+info:
+  title: MYO (Make Your Own) Chat API
+  version: 1.0.0
+  description: |
+    MYO (Make Your Own) Char API is an HTTP API.
+
+components:
+  schemas:
+    User:
+      type: object
+      required:
+        - id
+        - email
+        - screen_name
+        - name
+        - bio
+        - avatar_url
+        - rooms
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '3fb9eac8-3918-4804-a619-b34b138a3ad7'
+        email:
+          type: string
+          format: email
+          example: 'make.just.on@gmail.com'
+        screen_name:
+          type: string
+          example: 'MakeNowJust'
+        name:
+          type: string
+          example: TSUYUSATO Kitsune
+        bio:
+          type: string
+          example: I am Quine writer.
+        avatar_url:
+          type: string
+          format: url
+          example: 'https://gravatar.com/avatar/db1b7e3c6fe6f6a0e9752b2c19bf5473?s=200'
+        rooms:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompactRoom'
+    CompactUser:
+      type: object
+      required:
+        - id
+        - screen_name
+        - avatar_url
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '3fb9eac8-3918-4804-a619-b34b138a3ad7'
+        screen_name:
+          type: string
+          example: MakeNowJust
+        avatar_url:
+          type: string
+          format: url
+          example: 'https://gravatar.com/avatar/db1b7e3c6fe6f6a0e9752b2c19bf5473?s=200'
+    Room:
+      type: object
+      required:
+        - id
+        - screen_name
+        - description
+        - owners
+        - members
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '29dcef43-9b06-46ed-9ecf-8a796f10d22b'
+        screen_name:
+          type: string
+          example: general
+        description:
+          type: string
+          example: An entrance room
+        owners:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompactUser'
+        members:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompactUser'
+          example: []
+    CompactRoom:
+      type: object
+      required:
+        - id
+        - screen_name
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '29dcef43-9b06-46ed-9ecf-8a796f10d22b'
+        screen_name: 
+          type: string
+          example: general
+    Message:
+      type: object
+      required:
+        - id
+        - creator
+        - body
+        - create_date
+        - update_date
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: '9ead5481-d27d-48ea-900e-ecbc06259ad4'
+        creator:
+          $ref: '#/components/schemas/CompactUser'
+        body:
+          type: string
+          example: 'Hello World!'
+        create_date:
+          type: string
+          format: date-time
+        update_date:
+          type: string
+          format: date-time
+  requestBodies:
+    UserCreation:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - screen_name
+              - email
+              - password
+            properties:
+              screen_name:
+                type: string
+                example: MakeNowJust
+              email:
+                type: string
+                format: email
+                example: make.just.on@gmail.com
+              password:
+                type: string
+                example: aiueo123
+    UserProfile:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              screen_name:
+                type: string
+                example: MakeNowJust
+              email:
+                type: string
+                format: email
+                example: make.just.on@gmail.com
+              password:
+                type: string
+                example: aiueo123
+              name:
+                type: string
+                example: TSUYUSATO Kitsune
+              avatar_url:
+                type: string
+                example: 'https://gravatar.com/avatar/db1b7e3c6fe6f6a0e9752b2c19bf5473?s=200'
+              bio:
+                type: string
+                example: I am Quine writer.
+    RoomCreation:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - screen_name
+            properties:
+              screen_name:
+                type: string
+                example: general
+    RoomInfo:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              screen_name:
+                type: string
+                example: general
+              description:
+                type: string
+                example: An entrance room
+    UserListOperation:
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              add:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+                example: ['3fb9eac8-3918-4804-a619-b34b138a3ad7']
+              remove:
+                type: array
+                items:
+                  type: string
+                  format: uuid
+                example: []
+    MessageInfo:
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - body
+            properties:
+              body:
+                type: string
+                example: 'Hello World!'
+  securitySchemes:
+    Login:
+      type: http
+      scheme: basic
+    RoomOwner:
+      type: http
+      scheme: basic
+    RoomMember:
+      type: http
+      scheme: basic
+    MessageCreator:
+      type: http
+      scheme: basic
+    Admin:
+      type: http
+      scheme: basic
+
+paths:
+  /users:
+    get:
+      tags: [User]
+      summary: List users.
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+  /user:
+    get:
+      tags: [User]
+      summary: Get the current user.
+      security:
+        - Login: []
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    $ref: '#/components/schemas/User'
+    post:
+      tags: [User]
+      summary: Create a new user.
+      requestBody:
+        $ref: '#/components/requestBodies/UserCreation'
+      responses:
+        201:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    $ref: '#/components/schemas/User'
+    patch:
+      tags: [User]
+      summary: Update the current user's profile.
+      security:
+        - Login: []
+      requestBody:
+        $ref: '#/components/requestBodies/UserProfile'
+      responses:
+        204:
+          description: Successful operation
+    delete:
+      tags: [User]
+      summary: Delete the current user.
+      security:
+        - Login: []
+      responses:
+        204:
+          description: Successful operation
+  /user/{user_id}:
+    parameters:
+      - in: path
+        name: user_id
+        description: The user ID to use
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: '3fb9eac8-3918-4804-a619-b34b138a3ad7'
+    get:
+      tags: [User]
+      summary: Get the specified user.
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    $ref: '#/components/schemas/User'
+    patch:
+      tags: [User]
+      summary: Update the specified user profile.
+      security:
+        - Admin: []
+      requestBody:
+        $ref: '#/components/requestBodies/UserProfile'
+      responses:
+        204:
+          description: Successful operation
+    delete:
+      tags: [User]
+      summary: Delete the specified user.
+      security:
+        - Admin: []
+      responses:
+        204:
+          description: Successful operation
+  /rooms:
+    get:
+      tags: [Room]
+      summary: List rooms.
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Room'
+  /room:
+    post:
+      tags: [Room]
+      summary: Create a new user.
+      security:
+        - Login: []
+      requestBody:
+        $ref: '#/components/requestBodies/RoomCreation'
+      responses:
+        201:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    $ref: '#/components/schemas/Room'
+  /room/{room_id}:
+    parameters:
+      - in: path
+        name: room_id
+        description: The room ID to use
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: '29dcef43-9b06-46ed-9ecf-8a796f10d22b'
+    get:
+      tags: [Room]
+      summary: Get the specified room.
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    $ref: '#/components/schemas/Room'
+    patch:
+      tags: [Room]
+      summary: Update the specified room's information.
+      security:
+        - RoomOwner: []
+        - Admin: []
+      requestBody:
+        $ref: '#/components/requestBodies/RoomInfo'
+      responses:
+        204:
+          description: Successful operation
+    delete:
+      tags: [Room]
+      summary: Delete the specified room.
+      security:
+        - RoomOwner: []
+        - Admin: []
+      responses:
+        204:
+          description: Successful operation
+  /room/{room_id}/owners:
+    parameters:
+      - in: path
+        name: room_id
+        description: The room ID to use
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: '29dcef43-9b06-46ed-9ecf-8a796f10d22b'
+    get:
+      tags: [RoomOwner]
+      summary: List the specified room's owners.
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+    patch:
+      tags: [RoomOwner]
+      summary: Update the specified room's owners list.
+      security:
+        - RoomOwner: []
+        - Admin: []
+      requestBody:
+        $ref: '#/components/requestBodies/UserListOperation'
+      responses:
+        204:
+          description: Successful operation
+  /room/{room_id}/members:
+    parameters:
+      - in: path
+        name: room_id
+        description: The room ID to use
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: '29dcef43-9b06-46ed-9ecf-8a796f10d22b'
+    get:
+      tags: [RoomMember]
+      summary: List the specified room's member.
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+    patch:
+      tags: [RoomMember]
+      summary: Update the specified room's members list.
+      security:
+        - RoomOwner: []
+        - Admin: []
+      requestBody:
+        $ref: '#/components/requestBodies/UserListOperation'
+      responses:
+        204:
+          description: Successful operation
+  /room/{room_id}/member:
+    parameters:
+      - in: path
+        name: room_id
+        description: The room ID to use
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: '29dcef43-9b06-46ed-9ecf-8a796f10d22b'
+    put:
+      tags: [RoomMember]
+      summary: Join the specified room.
+      security:
+        - Login: []
+      responses:
+        204:
+          description: Successful operation
+    delete:
+      tags: [RoomMember]
+      summary: Leave the specified room.
+      security:
+        - RoomMember: []
+      responses:
+        204:
+          description: Successful operation
+  /room/{room_id}/messages:
+    parameters:
+      - in: path
+        name: room_id
+        description: The room ID to use
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: '29dcef43-9b06-46ed-9ecf-8a796f10d22b'
+    get:
+      tags: [RoomMessage]
+      summary: List the specified room's messages.
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Message'
+  /room/{room_id}/message:
+    parameters:
+      - in: path
+        name: room_id
+        description: The room ID to use
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: '29dcef43-9b06-46ed-9ecf-8a796f10d22b'
+    post:
+      tags: [RoomMessage]
+      summary: Send a message into the specified room.
+      security:
+        - RoomMember: []
+        - Admin: []
+      requestBody:
+        $ref: '#/components/requestBodies/MessageInfo'
+      responses:
+        201:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    $ref: '#/components/schemas/Message'
+  /room/{room_id}/message/{message_id}:
+    parameters:
+      - in: path
+        name: room_id
+        description: The room ID to use
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: '29dcef43-9b06-46ed-9ecf-8a796f10d22b'
+      - in: path
+        name: message_id
+        description: The message ID to use
+        required: true
+        schema:
+          type: string
+          format: uuid
+          example: '9ead5481-d27d-48ea-900e-ecbc06259ad4'
+    get:
+      tags: [RoomMessage]
+      summary: Get the specified message.
+      responses:
+        200:
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                    example: true
+                  result:
+                    $ref: '#/components/schemas/Message'
+    patch:
+      tags: [RoomMessage]
+      summary: Update the specified message.
+      security:
+        - MessageCreator: []
+        - RoomOwner: []
+        - Admin: []
+      requestBody:
+        $ref: '#/components/requestBodies/MessageInfo'
+      responses:
+        204:
+          description: Successful operation
+    delete:
+      tags: [RoomMessage]
+      summary: Delete the specified message.
+      security:
+        - MessageCreator: []
+        - RoomOwner: []
+        - Admin: []
+      responses:
+        204:
+          description: Successful operation
